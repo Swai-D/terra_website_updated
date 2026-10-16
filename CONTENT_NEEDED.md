@@ -27,14 +27,14 @@ Source: *Terra Consulting – Website Content & Correction Guide* (October 2026)
 - [ ] Capability statement PDF (for Home, About and Contact)
 
 ## Insights (publish before promising)
-- [ ] At least 6 articles with author, date, sources → `ARTICLES` (10 starter topics are listed in the guide)
+- [ ] 2 articles are live (`tools/articles.py`, author shown as "Terra Consulting team"). Insights stays hidden from search engines until 6 are live. Replace the team author with a named person, check the three source links open, and add 4 more (guide lists 8 further topics; the ESIA article needs review by a qualified adviser before publishing)
 
 ## Setup tasks
 - [ ] Create `config.php` on the server; send a test enquiry
 - [ ] Google Search Console + Analytics, submit `sitemap.xml`
 - [ ] Google Business Profile for the Tegeta office
 - [ ] Privacy notice: have it reviewed against Tanzania's Personal Data Protection Act, 2022 (including any registration duty). The Cookie Policy mentions Google Analytics: keep it only if analytics is actually installed, and add a cookie banner if so
-- [ ] Swahili versions of key pages (not built yet)
+- [ ] Swahili pages exist for Home, Services, Contact and Thank-you (`/sw/`). Have a Swahili speaker on the team read them before launch; service detail pages, About, Industries and legal pages are still English-only
 
 ## Security: do now
 - [ ] The previous repo contained a database password and an admin password in plain text. They are removed from the files but **remain in git history**. Change both on the server now. If the repo is public, treat them as exposed.

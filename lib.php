@@ -26,7 +26,12 @@ function go(string $path, array $q = []): void {
     header('Location: ' . $path . ($q ? '?' . http_build_query($q) : ''));
     exit;
 }
-function fail(string $msg): void { go('/contact', ['status' => 'error', 'msg' => $msg]); }
+function is_sw(): bool { return ($_POST['lang'] ?? '') === 'sw'; }
+function thanks(): void { go(is_sw() ? '/sw/asante' : '/thank-you'); }
+function fail(string $msg, string $msg_sw = ''): void {
+    if (is_sw()) go('/sw/mawasiliano', ['status' => 'error', 'msg' => $msg_sw !== '' ? $msg_sw : $msg]);
+    go('/contact', ['status' => 'error', 'msg' => $msg]);
+}
 
 // Returns true if the request looks like a bot or is sent too often.
 function looks_like_bot(): bool {

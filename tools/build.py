@@ -42,11 +42,12 @@ def social_links():
     return f'<div class="footer-social">{out}</div>' if out else ""
 
 
-def head(title, desc, path, noindex=False, extra_ld=""):
+def head(title, desc, path, noindex=False, extra_ld="", lang="en", alts=None):
     canon = BASE + path
+    hl = "".join(f'<link rel="alternate" hreflang="{k}" href="{BASE}{v}">' for k, v in (alts or {}).items())
     robots = '<meta name="robots" content="noindex, follow">' if noindex else ""
     return f'''<!DOCTYPE html>
-<html lang="en">
+<html lang="{lang}">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -55,10 +56,12 @@ def head(title, desc, path, noindex=False, extra_ld=""):
 <meta name="author" content="{e(SITE["name"])}">
 {robots}
 <link rel="canonical" href="{canon}">
+{hl}
 <meta property="og:title" content="{e(title)}">
 <meta property="og:description" content="{e(desc)}">
 <meta property="og:type" content="website">
 <meta property="og:url" content="{canon}">
+<meta property="og:locale" content="{"sw_TZ" if lang == "sw" else "en_TZ"}">
 <meta property="og:site_name" content="{e(SITE["name"])}">
 <meta property="og:image" content="{BASE}/assets/img/og-image.jpg">
 <meta name="twitter:card" content="summary_large_image">
@@ -78,12 +81,14 @@ def head(title, desc, path, noindex=False, extra_ld=""):
 '''
 
 
-def header(active):
+def header(active, switch=None):
     items = ""
     for label, href in NAV:
         cur = ' aria-current="page"' if href == active else ""
         cls = " active" if href == active else ""
         items += f'<li class="nav-item"><a href="{href}" class="nav-link{cls}"{cur}>{label}</a></li>'
+    if switch:
+        items += f'<li class="nav-item"><a href="{switch}" class="nav-link lang-switch" hreflang="sw" lang="sw" aria-label="Soma kwa Kiswahili">SW</a></li>'
     items += '<li class="nav-item"><a href="/contact" class="nav-link cta-button">Request a consultation</a></li>'
     return f'''<div class="topbar"><div class="topbar-inner">
 <span><i class="fas fa-location-dot"></i> {e(CONTACT["short_address"])}</span>
@@ -220,7 +225,7 @@ def build_home():
 '''
     t = "Terra Consulting | ESG & Environmental Consulting Tanzania"
     d = "Environmental compliance, ESG and monitoring support for mining, manufacturing, energy, construction and public-sector organisations in Tanzania. Based in Dar es Salaam."
-    emit("index.html", "/", head(t, d, "/", extra_ld=org_ld()) + header("/") + body + footer(), prio="1.0")
+    emit("index.html", "/", head(t, d, "/", extra_ld=org_ld(), alts={"en": "/", "sw": "/sw/", "x-default": "/"}) + header("/", "/sw/") + body + footer(), prio="1.0")
 
 
 # ---------------------------------------------------------------- about
@@ -265,7 +270,7 @@ def build_services():
 {cta_band()}'''
     t = "ESG & Environmental Consulting Services | Terra Consulting"
     d = "ESG assessment, strategy, reporting, environmental compliance and audits, monitoring and training for organisations in Tanzania."
-    emit("services/index.html", "/services/", head(t, d, "/services/") + header("/services/") + body + footer(), prio="0.9")
+    emit("services/index.html", "/services/", head(t, d, "/services/", alts={"en": "/services/", "sw": "/sw/huduma", "x-default": "/services/"}) + header("/services/", "/sw/huduma") + body + footer(), prio="0.9")
 
     for s in SERVICES:
         steps = "".join(f'<li><strong>{e(a)}.</strong> {e(b)}</li>' for a, b in s["steps"])
@@ -331,7 +336,7 @@ def newsletter_form():
 <div class="form-group"><label for="nl-email">Email address</label><input id="nl-email" name="email" type="email" required autocomplete="email"></div>
 <div class="hp" aria-hidden="true"><label>Leave empty<input type="text" name="website" tabindex="-1" autocomplete="off"></label></div>
 <input type="hidden" name="ts" value="">
-<label class="check"><input type="checkbox" name="consent" value="yes" required> I agree to receive emails from Terra Consulting and have read the <a href="/privacy">Privacy Policy</a>.</label>
+<label class="check"><input type="checkbox" name="consent" value="yes" required><span> I agree to receive emails from Terra Consulting and have read the <a href="/privacy">Privacy Policy</a>.</span></label>
 <button class="btn btn-primary" type="submit">Subscribe</button></form>'''
 
 
@@ -343,7 +348,7 @@ def build_insights():
         inner = '''<div class="empty-state"><i class="fas fa-pen-nib"></i><h2>Our first articles are on the way</h2>
 <p>We will publish practical guidance on environmental compliance, ESG reporting and monitoring, each with an author, a date and cited sources. Articles are general information, not legal advice.</p></div>'''
     body = page_hero("Insights", "Plain-language guidance on environmental compliance, ESG and monitoring in Tanzania.", [("Home", "/"), ("Insights", None)]) + f'<section class="section"><div class="container two-col wide-left"><div>{inner}</div><aside>{newsletter_form()}</aside></div></section>'
-    emit("insights.html", "/insights", head("ESG & Environmental Compliance Insights | Terra Consulting", "Guidance on environmental compliance, ESG reporting and monitoring in Tanzania.", "/insights", noindex=not ARTICLES) + header("/insights") + body + footer(), index=bool(ARTICLES), prio="0.6")
+    emit("insights.html", "/insights", head("ESG & Environmental Compliance Insights | Terra Consulting", "Guidance on environmental compliance, ESG reporting and monitoring in Tanzania.", "/insights", noindex=len(ARTICLES) < MIN_ARTICLES) + header("/insights") + body + footer(), index=len(ARTICLES) >= MIN_ARTICLES, prio="0.6")
 
 
 # ---------------------------------------------------------------- contact
@@ -366,7 +371,7 @@ def build_contact():
 <div class="form-group"><label for="c-message">How can we help? *</label><textarea id="c-message" name="message" rows="5" required placeholder="Project, location, stage, and who is asking for the information"></textarea></div>
 <div class="hp" aria-hidden="true"><label>Leave empty<input type="text" name="website" tabindex="-1" autocomplete="off"></label></div>
 <input type="hidden" name="ts" value="">
-<label class="check"><input type="checkbox" name="consent" value="yes" required> I agree that Terra Consulting may use these details to respond to my enquiry, as described in the <a href="/privacy">Privacy Policy</a>. *</label>
+<label class="check"><input type="checkbox" name="consent" value="yes" required><span> I agree that Terra Consulting may use these details to respond to my enquiry, as described in the <a href="/privacy">Privacy Policy</a>. *</span></label>
 <button class="btn btn-primary" type="submit">Send enquiry</button>
 <p class="fine">{e(REPLY_PROMISE)}</p></form></div>
 <aside>
@@ -379,7 +384,7 @@ def build_contact():
 <p><a href="https://www.google.com/maps/search/?api=1&query={CONTACT["map_q"]}" target="_blank" rel="noopener">Open in Google Maps for directions</a></p></div>
 <div class="panel"><h3>Your data</h3><p>We use your details only to answer your enquiry. See the <a href="/privacy">Privacy Policy</a> for what we keep, for how long, and how to ask for deletion.</p></div>
 </aside></div></section>'''
-    emit("contact.html", "/contact", head("Contact Terra Consulting | Dar es Salaam", "Contact Terra Consulting in Tegeta, Dar es Salaam: phone, WhatsApp, email and an enquiry form.", "/contact", extra_ld=org_ld()) + header("/contact") + body + footer(), prio="0.9")
+    emit("contact.html", "/contact", head("Contact Terra Consulting | Dar es Salaam", "Contact Terra Consulting in Tegeta, Dar es Salaam: phone, WhatsApp, email and an enquiry form.", "/contact", extra_ld=org_ld(), alts={"en": "/contact", "sw": "/sw/mawasiliano", "x-default": "/contact"}) + header("/contact", "/sw/mawasiliano") + body + footer(), prio="0.9")
     ty = page_hero("Thank you", "Your enquiry has been received.") + f'<section class="section"><div class="container narrow"><p>{e(REPLY_PROMISE)} A confirmation has also been sent to the email address you gave. If you do not see it, check your spam folder.</p><p>Need us sooner? <a href="https://wa.me/{CONTACT["wa"]}">Message us on WhatsApp</a>.</p><a class="btn btn-primary" href="/">Back to home</a></div></section>'
     emit("thank-you.html", "/thank-you", head("Thank you | Terra Consulting", "Your enquiry has been received.", "/thank-you", noindex=True) + header("") + ty + footer(), index=False)
 
@@ -402,6 +407,142 @@ def build_legal():
     emit("404.html", "/404", head("Page not found | Terra Consulting", "Page not found.", "/404", noindex=True) + header("") + nf + footer(), index=False)
 
 
+
+# ---------------------------------------------------------------- articles
+def read_minutes(a):
+    words = sum(len(p.split()) for _, ps in a["body"] for p in ps)
+    return max(1, round(words / 200))
+
+
+def build_articles():
+    import json
+    for a in ARTICLES:
+        body_html = "".join(f"<h2>{e(h)}</h2>" + "".join(f"<p>{e(p)}</p>" for p in ps) for h, ps in a["body"])
+        src = "".join(f'<li><a href="{e(u)}" target="_blank" rel="noopener">{e(t)}</a></li>' for t, u in a["sources"])
+        related = ""
+        ld = {"@context": "https://schema.org", "@type": "Article", "headline": a["title"], "datePublished": a["date"],
+              "dateModified": a["updated"], "author": {"@type": "Organization", "name": a["author"]},
+              "publisher": {"@type": "Organization", "name": SITE["name"]}}
+        body = page_hero(a["title"], a["summary"], [("Home", "/"), ("Insights", "/insights"), (a["category"], None)]) + f'''
+<section class="section"><div class="container narrow article">
+<p class="meta-line">By {e(a["author"])} · Published {a["date"]} · Updated {a["updated"]} · {read_minutes(a)} min read · {e(a["category"])}</p>
+{body_html}
+<h2>Sources</h2><ul class="plain-list">{src}</ul>
+<p class="note">General information only. It is not legal, financial or professional advice.</p>
+<div class="panel"><h3>Need help with this?</h3><p>Tell us about your project and we will reply with how we would approach it.</p><a class="btn btn-primary" href="/contact">Request a consultation</a></div>
+</div></section>'''
+        t = f'{a["title"]} | Terra Consulting'
+        emit(f'insights/{a["slug"]}.html', f'/insights/{a["slug"]}',
+             head(t, a["summary"], f'/insights/{a["slug"]}', extra_ld='<script type="application/ld+json">' + json.dumps(ld) + "</script>") + header("/insights") + body + footer(), prio="0.6")
+
+
+# ---------------------------------------------------------------- Kiswahili (key pages)
+SW_NAV = [("Mwanzo", "/sw/"), ("Huduma", "/sw/huduma"), ("Mawasiliano", "/sw/mawasiliano")]
+SW_SERVICES = {
+ "esg-assessment": ("Tathmini ya ESG na Umuhimu", "Mapitio yaliyopangwa ya utendaji wako wa mazingira, jamii na utawala, na masuala yanayowagusa zaidi wadau wako."),
+ "esg-strategy": ("Mkakati na Ramani ya ESG", "Mkakati wa vitendo wa ESG wenye malengo, viashiria na wahusika, unaoendana na biashara yako."),
+ "esg-reporting": ("Ripoti za ESG na Uendelevu", "Msaada wa kukusanya takwimu na kuandaa ripoti kwa kutumia GRI na viwango vya IFRS S1 na S2."),
+ "environmental-compliance": ("Utiifu wa Mazingira, Ukaguzi na Vibali", "Msaada wa kuelewa wajibu wako wa kimazingira, kujiandaa kwa ukaguzi na kukusanya nyaraka zinazohitajika na mamlaka."),
+ "environmental-monitoring": ("Ufuatiliaji wa Mazingira na Jamii", "Ufuatiliaji uliopangwa wa hali ya mazingira na jamii katika maeneo yako ya kazi, pamoja na ripoti zilizo wazi kwa wadhibiti na wakopeshaji."),
+ "training": ("Mafunzo na Kujenga Uwezo", "Mafunzo ya vitendo ili timu yako iweze kusimamia utiifu wa mazingira na uandishi wa ripoti za ESG baada yetu."),
+}
+SW_SECTORS = [("mining", "Madini"), ("manufacturing", "Viwanda"), ("energy", "Nishati"), ("construction", "Ujenzi"), ("public-sector", "Sekta ya umma")]
+SW_STEPS = [("Tathmini", "Tunapitia shughuli zako, wajibu wako na matarajio ya wadau, kisha tunakubaliana kwa maandishi kuhusu wigo wa kazi."),
+            ("Mpango", "Tunaweka vipaumbele, wahusika na mpango wa kazi unaotekelezeka, pamoja na viwango vinavyohusika."),
+            ("Utekelezaji na ufuatiliaji", "Tunakabidhi ripoti, mipango au mafunzo yaliyokubaliwa, kisha tunasaidia ufuatiliaji.")]
+SW_REPLY = "Tunalenga kujibu ndani ya saa 24 siku za kazi."   # TODO: owner to confirm
+
+
+def sw_header(active):
+    items = "".join(f'<li class="nav-item"><a href="{h}" class="nav-link{" active" if h == active else ""}">{t}</a></li>' for t, h in SW_NAV)
+    en = {"/sw/": "/", "/sw/huduma": "/services/", "/sw/mawasiliano": "/contact"}.get(active, "/")
+    items += f'<li class="nav-item"><a href="{en}" class="nav-link lang-switch" hreflang="en" lang="en" aria-label="Read in English">EN</a></li>'
+    items += '<li class="nav-item"><a href="/sw/mawasiliano" class="nav-link cta-button">Omba ushauri</a></li>'
+    return f'''<div class="topbar"><div class="topbar-inner"><span><i class="fas fa-location-dot"></i> {e(CONTACT["short_address"])}</span>
+<span><a href="tel:{CONTACT["tel"]}"><i class="fas fa-phone"></i> {e(CONTACT["phone_display"])}</a><a href="https://wa.me/{CONTACT["wa"]}" target="_blank" rel="noopener"><i class="fab fa-whatsapp"></i> WhatsApp</a></span></div></div>
+<nav class="navbar" id="navbar" aria-label="Menyu kuu"><div class="nav-container">
+<div class="nav-logo"><a href="/sw/" class="logo-link"><i class="fas fa-leaf"></i><span>Terra Consulting</span></a></div>
+<ul class="nav-menu" id="nav-menu">{items}</ul>
+<button class="hamburger" id="hamburger" type="button" aria-label="Fungua menyu" aria-expanded="false" aria-controls="nav-menu"><span class="bar"></span><span class="bar"></span><span class="bar"></span></button>
+</div></nav>
+<main id="main">
+'''
+
+
+def sw_footer():
+    reg = ('<p class="footer-reg">' + " · ".join(f"{e(k)}: {e(v)}" for k, v in REGISTRATIONS.items()) + "</p>") if REGISTRATIONS else ""
+    return f'''</main>
+<footer class="footer"><div class="container"><div class="footer-content">
+<div class="footer-section"><div class="footer-logo"><i class="fas fa-leaf"></i><span>Terra Consulting</span></div><p>Usimamizi wa mazingira, ESG na ufuatiliaji kwa taasisi nchini Tanzania.</p>{social_links()}</div>
+<div class="footer-section"><h4>Kurasa</h4><ul><li><a href="/sw/huduma">Huduma</a></li><li><a href="/about">Kuhusu sisi (English)</a></li><li><a href="/industries/">Sekta (English)</a></li><li><a href="/sw/mawasiliano">Mawasiliano</a></li></ul></div>
+<div class="footer-section"><h4>Mawasiliano</h4><div class="footer-contact">
+<p><i class="fas fa-phone"></i> <a href="tel:{CONTACT["tel"]}">{e(CONTACT["phone_display"])}</a></p>
+<p><i class="fab fa-whatsapp"></i> <a href="https://wa.me/{CONTACT["wa"]}" target="_blank" rel="noopener">WhatsApp</a></p>
+<p><i class="fas fa-envelope"></i> <a href="mailto:{CONTACT["email"]}">{CONTACT["email"]}</a></p>
+<p><i class="fas fa-map-marker-alt"></i> {CONTACT["address_html"]}</p></div></div></div>
+<div class="footer-bottom"><div class="footer-bottom-content"><div><p>&copy; <span id="year">{YEAR}</span> {e(SITE["legal_name"])}. Haki zote zimehifadhiwa.</p>{reg}</div>
+<div class="footer-links"><a href="/privacy">Sera ya Faragha (English)</a><a href="/terms">Masharti (English)</a><a href="/cookies">Vidakuzi (English)</a></div></div></div></div></footer>
+<script src="/assets/js/script.js"></script></body></html>
+'''
+
+
+def sw_hero(h1, lead):
+    return f'<section class="page-hero"><div class="container"><h1>{e(h1)}</h1><p class="lead">{e(lead)}</p></div></section>'
+
+
+def sw_cta():
+    return '<section class="cta-band"><div class="container"><h2>Tuzungumze</h2><p>Tuelezee kuhusu mradi wako na tutakujibu jinsi tutakavyoushughulikia.</p><a class="btn btn-primary" href="/sw/mawasiliano">Omba ushauri</a></div></section>'
+
+
+def build_swahili():
+    alts = lambda en, sw: {"en": en, "sw": sw, "x-default": en}
+    cards = "".join(f'''<a class="service-card card-link" href="/services/{s["slug"]}"><div class="service-icon"><i class="fas {s["icon"]}"></i></div>
+<h3>{e(SW_SERVICES[s["slug"]][0])}</h3><p>{e(SW_SERVICES[s["slug"]][1])}</p><span class="service-link">Maelezo kamili (English) <i class="fas fa-arrow-right"></i></span></a>''' for s in SERVICES)
+    chips = "".join(f'<a class="chip" href="/industries/{k}">{t}</a>' for k, t in SW_SECTORS)
+    steps = "".join(f'<div class="step"><span class="step-n">{n}</span><h3>{e(t)}</h3><p>{e(d)}</p></div>' for n, (t, d) in enumerate(SW_STEPS, 1))
+    trust = ["Tupo Tegeta, Dar es Salaam", "Ripoti zinazoendana na GRI na IFRS S1 na S2", "Viwango vya IFC pale wakopeshaji wanapovihitaji"]
+    tl = "".join(f'<li><i class="fas fa-check"></i> {e(t)}</li>' for t in trust)
+    home = f'''<section class="hero home-hero"><div class="hero-container"><div class="hero-content">
+<h1 class="hero-title">Usimamizi wa mazingira, ESG na ufuatiliaji kwa taasisi nchini Tanzania</h1>
+<p class="hero-description">Tunasaidia kampuni za madini, viwanda, nishati, ujenzi na taasisi za umma kutathmini hatari za kimazingira na kijamii, kutimiza wajibu wao na kuripoti kwa uwazi.</p>
+<div class="hero-buttons"><a href="/sw/mawasiliano" class="btn btn-primary">Omba ushauri</a><a href="/sw/huduma" class="btn btn-secondary">Tazama huduma zetu</a></div></div>
+<div class="hero-image"><div class="hero-panel"><h2>Tunawasaidia nani</h2><p>Wakopeshaji, wawekezaji na wadhibiti wanazidi kuomba taarifa za mazingira na ESG kutoka kwa kampuni za Tanzania. Tunakusaidia kujibu kwa uwazi na kwa ushahidi.</p><ul class="check-list">{tl}</ul></div></div></div></section>
+<section class="section"><div class="container"><div class="section-header"><h2>Tunachofanya</h2><p>Huduma sita, kila moja ikiwa na wigo na matokeo yaliyofafanuliwa.</p></div><div class="services-grid">{cards}</div></div></section>
+<section class="section alt"><div class="container"><div class="section-header"><h2>Jinsi tunavyofanya kazi</h2></div><div class="steps">{steps}</div></div></section>
+<section class="section"><div class="container"><div class="section-header"><h2>Sekta tunazohudumia</h2></div><div class="chips">{chips}</div></div></section>{sw_cta()}'''
+    emit("sw/index.html", "/sw/", head("Terra Consulting | Ushauri wa ESG na Mazingira Tanzania", "Usimamizi wa mazingira, ESG na ufuatiliaji kwa kampuni za madini, viwanda, nishati, ujenzi na taasisi za umma nchini Tanzania.", "/sw/", lang="sw", alts=alts("/", "/sw/"), extra_ld=org_ld()) + sw_header("/sw/") + home + sw_footer(), prio="0.8")
+
+    hz = sw_hero("Huduma", "Tunachofanya, utakachopokea na jinsi tunavyofanya kazi.") + f'<section class="section"><div class="container"><div class="services-grid">{cards}</div><p class="note">Kurasa za kina za kila huduma ziko kwa Kiingereza kwa sasa. Rejea za sheria na viwango ni za mwongozo tu; thibitisha mahitaji ya sasa na mamlaka husika au mshauri aliyehitimu.</p></div></section>{sw_cta()}'
+    emit("sw/huduma.html", "/sw/huduma", head("Huduma za ESG na Mazingira | Terra Consulting", "Tathmini ya ESG, mkakati, ripoti, utiifu wa mazingira, ufuatiliaji na mafunzo kwa taasisi nchini Tanzania.", "/sw/huduma", lang="sw", alts=alts("/services/", "/sw/huduma")) + sw_header("/sw/huduma") + hz + sw_footer(), prio="0.7")
+
+    sect = "".join(f'<option value="{k}">{t}</option>' for k, t in [("mining", "Madini"), ("manufacturing", "Viwanda"), ("energy", "Nishati"), ("construction", "Ujenzi"), ("public-sector", "Sekta ya umma"), ("other", "Nyingine")])
+    svc = "".join(f'<option value="{s["slug"]}">{e(SW_SERVICES[s["slug"]][0])}</option>' for s in SERVICES) + '<option value="not-sure">Sina uhakika bado</option>'
+    cz = sw_hero("Mawasiliano", f"Tuelezee kuhusu mradi wako. {SW_REPLY}") + f'''<section class="section"><div class="container two-col wide-left"><div>
+<div id="form-status" class="form-status" role="alert" hidden></div>
+<form id="consultation-form" class="panel big-form" method="POST" action="/submit-consultation.php" data-validate><h2>Omba ushauri</h2>
+<input type="hidden" name="lang" value="sw">
+<div class="grid-2">
+<div class="form-group"><label for="c-name">Jina kamili *</label><input id="c-name" name="name" type="text" required autocomplete="name"></div>
+<div class="form-group"><label for="c-email">Barua pepe ya kazi *</label><input id="c-email" name="email" type="email" required autocomplete="email"></div>
+<div class="form-group"><label for="c-company">Kampuni au taasisi *</label><input id="c-company" name="company" type="text" required autocomplete="organization"></div>
+<div class="form-group"><label for="c-phone">Simu / WhatsApp (si lazima)</label><input id="c-phone" name="phone" type="tel" autocomplete="tel"></div>
+<div class="form-group"><label for="c-sector">Sekta *</label><select id="c-sector" name="sector" required><option value="">Chagua sekta</option>{sect}</select></div>
+<div class="form-group"><label for="c-service">Huduma *</label><select id="c-service" name="service" required><option value="">Chagua huduma</option>{svc}</select></div></div>
+<div class="form-group"><label for="c-message">Tunawezaje kukusaidia? *</label><textarea id="c-message" name="message" rows="5" required placeholder="Mradi, mahali, hatua ya mradi, na nani anaomba taarifa"></textarea></div>
+<div class="hp" aria-hidden="true"><label>Acha wazi<input type="text" name="website" tabindex="-1" autocomplete="off"></label></div><input type="hidden" name="ts" value="">
+<label class="check"><input type="checkbox" name="consent" value="yes" required><span> Nakubali Terra Consulting itumie taarifa hizi kujibu ombi langu, kama ilivyoelezwa kwenye <a href="/privacy">Sera ya Faragha</a> (English). *</span></label>
+<button class="btn btn-primary" type="submit">Tuma ombi</button><p class="fine">{e(SW_REPLY)}</p></form></div>
+<aside><div class="panel"><h3>Wasiliana nasi</h3><p><i class="fas fa-phone"></i> <a href="tel:{CONTACT["tel"]}">{e(CONTACT["phone_display"])}</a></p>
+<p><i class="fab fa-whatsapp"></i> <a href="https://wa.me/{CONTACT["wa"]}" target="_blank" rel="noopener">Tuandikie WhatsApp</a></p>
+<p><i class="fas fa-envelope"></i> <a href="mailto:{CONTACT["email"]}">{CONTACT["email"]}</a></p><p><i class="fas fa-map-marker-alt"></i> {CONTACT["address_html"]}</p></div>
+<div class="panel map"><iframe title="Ramani ya ofisi ya Terra Consulting, Tegeta, Dar es Salaam" src="https://www.google.com/maps?q={CONTACT["map_q"]}&output=embed" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe></div>
+<div class="panel"><h3>Taarifa zako</h3><p>Tunatumia taarifa zako kujibu ombi lako tu. Soma <a href="/privacy">Sera ya Faragha</a> (English).</p></div></aside></div></section>'''
+    emit("sw/mawasiliano.html", "/sw/mawasiliano", head("Wasiliana na Terra Consulting | Dar es Salaam", "Wasiliana na Terra Consulting, Tegeta, Dar es Salaam: simu, WhatsApp, barua pepe na fomu ya maombi.", "/sw/mawasiliano", lang="sw", alts=alts("/contact", "/sw/mawasiliano")) + sw_header("/sw/mawasiliano") + cz + sw_footer(), prio="0.8")
+
+    ty = sw_hero("Asante", "Ombi lako limepokelewa.") + f'<section class="section"><div class="container narrow"><p>{e(SW_REPLY)} Tumekutumia pia barua pepe ya uthibitisho. Kama huioni, angalia folda ya spam.</p><p>Unahitaji msaada haraka? <a href="https://wa.me/{CONTACT["wa"]}">Tuandikie WhatsApp</a>.</p><a class="btn btn-primary" href="/sw/">Rudi mwanzo</a></div></section>'
+    emit("sw/asante.html", "/sw/asante", head("Asante | Terra Consulting", "Ombi lako limepokelewa.", "/sw/asante", noindex=True, lang="sw") + sw_header("") + ty + sw_footer(), index=False)
+
+
 # ---------------------------------------------------------------- sitemap / robots
 def build_seo():
     today = datetime.date.today().isoformat()
@@ -412,5 +553,5 @@ def build_seo():
 
 if __name__ == "__main__":
     build_home(); build_about(); build_services(); build_industries()
-    build_projects(); build_insights(); build_contact(); build_legal(); build_seo()
+    build_projects(); build_insights(); build_articles(); build_contact(); build_swahili(); build_legal(); build_seo()
     print(f"Built {len(SITEMAP)} indexable pages.")

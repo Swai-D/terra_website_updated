@@ -81,3 +81,7 @@ input.invalid,select.invalid,textarea.invalid{border-color:var(--error)!importan
 .footer-contact a,.footer-links a{color:#fff;text-decoration:none}
 .footer-contact a:hover{text-decoration:underline}
 .footer-contact p{display:flex;gap:10px;align-items:flex-start}
+
+.lang-switch{font-weight:600;border:1px solid var(--light-green);border-radius:6px;padding:4px 10px!important}
+.article h2{margin:28px 0 10px;font-size:1.35rem}.article p{margin-bottom:14px;line-height:1.75}
+.meta-line{color:var(--neutral-medium);font-size:.9rem;margin-bottom:20px}

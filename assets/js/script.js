@@ -24,7 +24,7 @@ document.addEventListener('DOMContentLoaded', function () {
   // Server-side error message (?status=error&msg=...)
   var st = document.getElementById('form-status');
   if (st && params.get('status') === 'error') {
-    st.textContent = params.get('msg') || 'Sorry, we could not send your message. Please try again or contact us directly.';
+    st.textContent = params.get('msg') || (document.documentElement.lang === 'sw' ? 'Samahani, ujumbe haukutumwa. Tafadhali jaribu tena au wasiliana nasi moja kwa moja.' : 'Sorry, we could not send your message. Please try again or contact us directly.');
     st.hidden = false;
   }
 
@@ -42,12 +42,13 @@ document.addEventListener('DOMContentLoaded', function () {
         if (bad) {
           ok = false; f.classList.add('invalid');
           var m = document.createElement('div'); m.className = 'field-error';
-          m.textContent = f.type === 'checkbox' ? 'Please tick this box to continue' : f.type === 'email' ? 'Enter a valid email address' : 'This field is required';
+          var sw = document.documentElement.lang === 'sw';
+          m.textContent = f.type === 'checkbox' ? (sw ? 'Tafadhali weka tiki ili uendelee' : 'Please tick this box to continue') : f.type === 'email' ? (sw ? 'Weka barua pepe sahihi' : 'Enter a valid email address') : (sw ? 'Sehemu hii inahitajika' : 'This field is required');
           (f.closest('.form-group') || f.closest('label') || f.parentNode).appendChild(m);
         }
       });
       if (!ok) { e.preventDefault(); var first = form.querySelector('.invalid'); if (first) first.focus(); return; }
-      var btn = form.querySelector('button[type="submit"]'); if (btn) { btn.disabled = true; btn.textContent = 'Sending...'; }
+      var btn = form.querySelector('button[type="submit"]'); if (btn) { btn.disabled = true; btn.textContent = document.documentElement.lang === 'sw' ? 'Inatuma...' : 'Sending...'; }
     });
   });
 });

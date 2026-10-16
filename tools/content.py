@@ -25,7 +25,8 @@ REPLY_PROMISE = "We aim to reply within 24 hours on business days."   # TODO: ow
 STATS = []            # [{"value": "..", "label": ".."}]
 TESTIMONIALS = []     # [{"quote": "", "name": "", "role": ""}]  (written permission required)
 PROJECTS = []         # [{"title": "", "sector": "", "region": "", "summary": ""}]
-ARTICLES = []         # [{"slug": "", "title": "", "summary": ""}]
+MIN_ARTICLES = 6      # Insights index is hidden from search engines until this many articles are live
+from articles import ARTICLES  # noqa  (see tools/articles.py)
 CREDENTIALS = []      # [{"person": "", "qualification": "", "body": "", "year": ""}]
 REGISTRATIONS = {}    # {"BRELA no.": "...", "TIN": "..."}
 HISTORY = ""          # "Founded in ... because ..."

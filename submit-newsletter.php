@@ -1,7 +1,7 @@
 <?php
 require __DIR__ . '/lib.php';
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') go('/insights');
-if (looks_like_bot()) go('/thank-you');
+if (looks_like_bot()) thanks();
 
 $cfg = terra_config();
 $name = one_line(clean($_POST['name'] ?? '', 150));
@@ -15,4 +15,4 @@ if ($m) {
     if ($st) { $st->bind_param('ss', $name, $email); $st->execute(); }
 }
 send_mail($cfg['to_email'], 'New newsletter subscriber', "Name: $name\nEmail: $email\nDate: " . date('Y-m-d H:i:s') . "\n", $email);
-go('/thank-you');
+thanks();
