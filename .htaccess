@@ -1,4 +1,4 @@
-# ESG Consulting Website - Apache Configuration
+# Terra Consulting - Apache Configuration
 
 # Enable compression
 <IfModule mod_deflate.c>
@@ -17,8 +17,8 @@
 # Set cache headers
 <IfModule mod_expires.c>
     ExpiresActive on
-    ExpiresByType text/css "access plus 1 year"
-    ExpiresByType application/javascript "access plus 1 year"
+    ExpiresByType text/css "access plus 1 month"
+    ExpiresByType application/javascript "access plus 1 month"
     ExpiresByType image/png "access plus 1 year"
     ExpiresByType image/jpg "access plus 1 year"
     ExpiresByType image/jpeg "access plus 1 year"
@@ -52,7 +52,15 @@ RewriteRule ^([^\.]+)$ $1.html [NC,L]
 
 # Custom error pages
 ErrorDocument 404 /404.html
-ErrorDocument 500 /500.html
+
+# Block direct access to server-side helpers and config
+<FilesMatch "^(lib\.php|config\.php|config\.example\.php)$">
+    Require all denied
+</FilesMatch>
+<FilesMatch "\.(md|py)$">
+    Require all denied
+</FilesMatch>
+RedirectMatch 404 ^/(tools|legal-src|\.git)(/|$)
 
 # Prevent access to sensitive files
 <FilesMatch "\.(htaccess|htpasswd|ini|log|sh|inc|bak)$">

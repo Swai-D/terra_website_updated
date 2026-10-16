@@ -1,27 +1,18 @@
 {
-  "name": "ESG Consulting Firm",
-  "short_name": "ESG Consulting",
-  "description": "Professional ESG consulting services for sustainable business growth",
+  "name": "Terra Consulting",
+  "short_name": "Terra",
+  "description": "Environmental compliance, ESG and monitoring support in Tanzania",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",
   "theme_color": "#2D5A27",
   "orientation": "portrait-primary",
-  "icons": [
-    {
-      "src": "assets/icon-192.png",
-      "sizes": "192x192",
-      "type": "image/png",
-      "purpose": "any maskable"
-    },
-    {
-      "src": "assets/icon-512.png",
-      "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "any maskable"
-    }
+  "icons": [],
+  "categories": [
+    "business",
+    "consulting",
+    "sustainability"
   ],
-  "categories": ["business", "consulting", "sustainability"],
   "lang": "en",
   "dir": "ltr",
   "scope": "/",
